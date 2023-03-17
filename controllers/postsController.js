@@ -1,3 +1,4 @@
+const { populate } = require("../models/Post");
 const Post = require("../models/Post");
 const User = require("../models/User");
 const { success, error } = require("../utils/responseWrapper");
@@ -66,8 +67,11 @@ const likeAndUnlikePost = async (req, res) => {
 
 const updatePostController = async (req, res) => {
     try {
-        const { postId, caption } = req.body;
+        const { postId, caption, updatePostImg } = req.body;
         const curUserId = req._id;
+        const cloudImg = await cloudinary.uploader.upload(updatePostImg, {
+            folder: 'postImg'
+        })
 
         const post = await Post.findById(postId).populate('owner');
         if (!post) {
@@ -77,6 +81,16 @@ const updatePostController = async (req, res) => {
         if (caption) {
             post.caption = caption;
         }
+
+        if(updatePostImg){
+            post.image = {
+                publicId: cloudImg.public_id,
+                url: cloudImg.url
+            }  
+        }
+        console.log('postImg',updatePostImg);
+        console.log('post.image',post.image)
+        
 
         await post.save();
         return res.send(success(200, {post: mapPostOutput(post, req._id)}));
